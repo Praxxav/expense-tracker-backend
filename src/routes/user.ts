@@ -64,7 +64,9 @@ userRouter.post('/signup', async (c) => {
         id: user.id
       }, c.env.JWT_SECRET);
   
-      return c.text(jwt)
+      return c.json({
+        jwt: jwt,
+      });
     } catch(e) {
       console.log(e);
       c.status(411);
