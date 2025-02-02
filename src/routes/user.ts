@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import { PrismaClient } from '@prisma/client/edge'
 import { withAccelerate } from '@prisma/extension-accelerate'
 import { sign } from 'hono/jwt'
-import { signupInput, signinInput } from "@praxav99/medium-common";
+
 
 export const userRouter = new Hono<{
     Bindings: {
@@ -21,9 +21,12 @@ userRouter.post('/signup', async (c) => {
     try {
       const user = await prisma.user.create({
         data: {
-          username: body.username,
+          //email-usename error here 
+          firstname: body.firstname,
+          lastname: body.lastname,
+          email: body.email,
           password: body.password,
-          name: body.name
+          
         }
       })
       const token = await sign({ id: user.id }, c.env.JWT_SECRET);
@@ -50,12 +53,12 @@ userRouter.post('/signup', async (c) => {
     try {
       const user = await prisma.user.findFirst({
         where: {
-          username: body.username,
+          email: body.email,
           password: body.password,
         }
       })
       if (!user) {
-        c.status(403);
+        c.status(403); // unauthorised
         return c.json({
           message: "Incorrect creds"
         })

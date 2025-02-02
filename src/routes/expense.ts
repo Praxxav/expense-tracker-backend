@@ -1,32 +1,26 @@
-import { createBlogInput, updateBlogInput } from "@praxav99/medium-common";
-
+import { createExpenseInput, updateExpenseInput } from "../validation/index"; // Ensure these schemas are defined correctly
 import { PrismaClient } from "@prisma/client/edge";
 import { withAccelerate } from "@prisma/extension-accelerate";
 import { Hono } from "hono";
 import { verify } from "hono/jwt";
 
-export const blogRouter = new Hono<{
+export const expenseRouter = new Hono<{
     Bindings: {
         DATABASE_URL: string;
         JWT_SECRET: string;
-    }, 
+    },
     Variables: {
         userId: string;
     }
 }>();
 
-// Middleware for token verification
-blogRouter.use('/*', async (c, next) => {
+expenseRouter.use('/*', async (c, next) => {
     const header = c.req.header("authorization") || "";
     const token = header.split(" ")[1];
 
-    console.log("Authorization Header:", header); // Log the header for debugging
-    console.log("Token:", token); // Log the token for debugging
-
     if (!token) {
-        console.error("Authorization header missing or malformed");
         c.status(403);
-        return c.json({ error: "unauthorized here" });
+        return c.json({ error: "unauthorized" });
     }
 
     try {
@@ -34,25 +28,22 @@ blogRouter.use('/*', async (c, next) => {
         if (response.id) {
             //@ts-ignore
             c.set("userId", response.id);
-            console.log("User ID set in context:", response.id); // Log the user ID for debugging
             await next();
         } else {
             c.status(403);
             return c.json({ error: "unauthorized" });
         }
     } catch (e) {
-        console.error("Token verification failed:", e);
         c.status(403);
         return c.json({ error: "unauthorized" });
     }
 });
 
-// POST route to create a blog
-blogRouter.post('/', async (c) => {
+// POST route to create an expense
+expenseRouter.post('/', async (c) => {
     try {
         //@ts-ignore
         const userId = c.get('userId');
-        console.log("User ID in POST route:", userId);
         const prisma = new PrismaClient({
             datasourceUrl: c.env?.DATABASE_URL,
         }).$extends(withAccelerate());
@@ -60,35 +51,33 @@ blogRouter.post('/', async (c) => {
         const body = await c.req.json();
 
         // Validate input using Zod schema
-        const { success, error } = createBlogInput.safeParse(body);
+        const { success, error } = createExpenseInput.safeParse(body);
         if (!success) {
-            console.error("Validation error:", error);
             c.status(400); // Bad Request
             return c.json({ message: "Invalid input", error });
         }
 
-        const blog = await prisma.blog.create({
+        const expense = await prisma.expense.create({
             data: {
-                title: body.title,
-                content: body.content,
-                authorId: parseInt(userId), // Ensure userId is properly converted
+                amount: body.amount,
+                category: body.category,
+                date: body.date,
+                userId: parseInt(userId), // Ensure userId is properly converted
             },
         });
 
-        return c.json({ id: blog.id });
+        return c.json({ id: expense.id });
     } catch (e) {
-        console.error("Error creating blog:", e);
         c.status(500); // Internal Server Error
         return c.json({ error: "Internal server error" });
     }
 });
 
-// PUT route to update a blog
-blogRouter.put('/', async (c) => {
+// PUT route to update an expense
+expenseRouter.put('/', async (c) => {
     const body = await c.req.json();
-    const { success, error } = updateBlogInput.safeParse(body);
+    const { success, error } = updateExpenseInput.safeParse(body);
     if (!success) {
-        console.error("Validation error:", error);
         c.status(411);
         return c.json({
             message: "Inputs not correct"
@@ -100,88 +89,121 @@ blogRouter.put('/', async (c) => {
     }).$extends(withAccelerate());
 
     try {
-        const blog = await prisma.blog.update({
+        const expense = await prisma.expense.update({
             where: {
                 id: body.id
             }, 
             data: {
-                title: body.title,
-                content: body.content
+                amount: body.amount,
+                category: body.category,
+                date: body.date
             }
         });
 
         return c.json({
-            id: blog.id
+            id: expense.id
         });
     } catch (e) {
-        console.error("Error updating blog:", e);
-        c.status(500); // Internal Server Error
+        c.status(500); 
         return c.json({ error: "Internal server error" });
     }
 });
 
-// GET route to fetch blogs in bulk
-blogRouter.get('/bulk', async (c) => {
+
+expenseRouter.get('/bulk', async (c) => {
     const prisma = new PrismaClient({
         datasourceUrl: c.env.DATABASE_URL,
     }).$extends(withAccelerate());
 
     try {
-        const blogs = await prisma.blog.findMany({
+        const expenses = await prisma.expense.findMany({
             select: {
-                content: true,
-                title: true,
+                amount: true,
+                category: true,
+                date: true,
                 id: true,
-                author: {
+                user: {
                     select: {
-                        name: true
+                        // name: true
                     }
                 }
             }
         });
 
         return c.json({
-            blogs
+            expenses
         });
     } catch (e) {
-        console.error("Error fetching blogs:", e);
         c.status(500); // Internal Server Error
         return c.json({ error: "Internal server error" });
     }
 });
 
-// GET route to fetch a single blog by ID
-blogRouter.get('/:id', async (c) => {
+// GET route to fetch a single expense
+expenseRouter.get('/:id', async (c) => {
     const id = c.req.param("id");
     const prisma = new PrismaClient({
         datasourceUrl: c.env.DATABASE_URL,
     }).$extends(withAccelerate());
 
     try {
-        const blog = await prisma.blog.findFirst({
+        const expense = await prisma.expense.findFirst({
             where: {
                 id: Number(id)
             },
             select: {
                 id: true,
-                title: true,
-                content: true,
-                author: {
+                amount: true,
+                category: true,
+                date: true,
+                user: {
                     select: {
-                        name: true
+                        // name: true
                     }
                 }
             }
         });
 
         return c.json({
-            blog
+            expense
         });
     } catch (e) {
-        console.error("Error fetching blog post:", e);
         c.status(500); // Internal Server Error
         return c.json({
-            message: "Error while fetching blog post"
+            message: "Error while fetching expense"
         });
+    }
+});
+expenseRouter.get('/category-spending', async (c) => {
+    const prisma = new PrismaClient({
+        datasourceUrl: c.env.DATABASE_URL,
+    }).$extends(withAccelerate());
+
+    try {
+        // Fetch total spending per category
+        const categorySpendings = await prisma.expense.groupBy({
+            by: ['category'],
+            _sum: {
+                amount: true,
+            },
+        });
+
+        // Calculate total spending
+        const totalSpending = categorySpendings.reduce((total, category) => total + (category._sum.amount || 0), 0);
+
+        // Calculate percentage distribution
+        const categoryDistribution = categorySpendings.map((category) => ({
+            category: category.category,
+            amount: category._sum.amount || 0,
+            percentage: ((category._sum.amount || 0) / totalSpending) * 100,
+        }));
+
+        return c.json({
+            totalSpending,
+            categoryDistribution,
+        });
+    } catch (e) {
+        c.status(500); // Internal Server Error
+        return c.json({ error: "Internal server error" });
     }
 });

@@ -10,17 +10,19 @@ datasource db {
 
 model User {
   id  Int    @id @default(autoincrement())
-  name    String?
-  username String @unique
+  firstname    String?
+  lastname     String?
+  email String @unique
   password String
-  blogs    Blog[]
+  expenses Expense[]
 }
 
-model Blog {
-  id  Int    @id @default(autoincrement())
-  authorId   Int
-  content    String
-  title       String
-  published Boolean  @default(false)
-  author    User @relation(fields: [authorId], references: [id])
+model Expense {
+  id          Int      @id @default(autoincrement())
+  amount      Float
+  description String?
+  category  String
+  date        DateTime @default(now())
+  userId      Int
+  user        User     @relation(fields: [userId], references: [id])
 }
