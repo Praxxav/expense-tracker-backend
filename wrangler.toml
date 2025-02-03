@@ -4,7 +4,7 @@ workers_dev = false
 compatibility_date = "2024-07-26"
  [vars]
  JWT_SECRET="praxav"
-DATABASE_URL="prisma://accelerate.prisma-data.net/?api_key=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhcGlfa2V5IjoiMzdiM2UzOTUtMmJmZi00ZDQ5LTk5MzYtODNlYmY0ZDFiZjRiIiwidGVuYW50X2lkIjoiMjAyYmZkZThhZjU5OTc5ZGI1YWY4NmMwMmFhNGI3YTcwNzc4YWYwYzQwZTk1NDljM2IyZDVjYzM4Y2M5NzA4OCIsImludGVybmFsX3NlY3JldCI6ImZmODkxNWM0LWRmNWYtNGM0MC04ZGY4LTIyNTJiMjA5Yzc0YSJ9.HBenMZU5vqSxuElsGCKAHFgwSUHAfzXROMxv_46fhYY"
+DATABASE_URL="ADD_PRISMA_URL"
 # [[kv_namespaces]]
 # binding = "MY_KV_NAMESPACE"
 # id = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
